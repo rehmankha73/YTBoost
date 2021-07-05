@@ -20,7 +20,9 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->string('image')->nullable();
             $table->bigInteger('total_coins')->default(0)->nullable();
-
+            $table->string('last_date')->nullable();
+            $table->string('premium_type')->nullable();
+            $table->boolean('has_premium')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

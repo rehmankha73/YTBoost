@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,7 +24,10 @@ class User extends Authenticatable
         'email',
         'password',
         'image',
-        'total_coins'
+        'total_coins',
+        'last_date',
+        'premium_type',
+        'has_premium',
     ];
 
     /**
@@ -45,6 +47,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'has_premium' => 'boolean'
     ];
 
     public function campaigns(): HasMany
