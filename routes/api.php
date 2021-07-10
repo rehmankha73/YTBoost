@@ -19,23 +19,25 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//    return $request->user();
+//});
 
 //apis for registration
-Route::post('/register', [RegisteredUserController::class, 'store']);
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-    ->middleware('auth:sanctum');
+//Route::post('/register', [RegisteredUserController::class, 'store']);
+//Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+//Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+//    ->middleware('auth:sanctum');
 
 //apis
-Route::middleware('auth:sanctum')->group(function (){
-    Route::get('fetch-user-action-campaign', [CampaignController::class, 'fetchUserActionCampaign']);
-    Route::post('fetch-campaign', [CampaignController::class, 'fetchCampaign']);
-    Route::apiResources([
-        'users' => UserController::class,
-        'campaigns' => CampaignController::class,
-        'participants' => ParticipantController::class,
-    ]);
-});
+
+Route::get('fetch-user-action-campaign', [CampaignController::class, 'fetchUserActionCampaign']);
+Route::post('fetch-campaign', [CampaignController::class, 'fetchCampaign']);
+Route::post('user', UserController::class);
+Route::apiResources([
+    'campaigns' => CampaignController::class,
+    'participants' => ParticipantController::class,
+]);
+//Route::middleware('auth:sanctum')->group(function (){
+//
+//});

@@ -21,8 +21,7 @@ class CampaignController extends Controller
      */
     public function index(): \Illuminate\Http\JsonResponse
     {
-        $campaigns= auth()->user()
-            ->campaigns()
+        $campaigns= Campaign::query()
             ->with('participants')
             ->latest()
             ->get();
@@ -43,7 +42,7 @@ class CampaignController extends Controller
     public function store(CampaignCreateRequest $request): \Illuminate\Http\JsonResponse
     {
         $validated_data = $request->validated();
-        $campaign = auth()->user()->campaigns()->create($validated_data);
+        $campaign = Campaign::query()->create($validated_data);
         $campaign['participants'] = $campaign->participants()->get();
         return $this->successApiResponse(
             $campaign->toArray(),
@@ -60,7 +59,7 @@ class CampaignController extends Controller
      */
     public function show(int $id): \Illuminate\Http\JsonResponse
     {
-        $campaign = auth()->user()->campaigns()->findOrFail($id);
+        $campaign = Campaign::query()->findOrFail($id);
         $campaign['participants'] = $campaign->participants()->get();
 
         return $this->successApiResponse(
@@ -80,7 +79,7 @@ class CampaignController extends Controller
      */
     public function update(CampaignUpdateRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
-        $campaign = auth()->user()->campaigns()->findOrFail($id);
+        $campaign = Campaign::query()->findOrFail($id);
         $updated_data = $request->validated();
         $is_updated = $campaign->update($updated_data);
 
@@ -103,7 +102,7 @@ class CampaignController extends Controller
      */
     public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
-        $campaign = auth()->user()->campaigns()->findOrFail($id);
+        $campaign = Campaign::query()->findOrFail($id);
         $campaign->delete();
         return $this->successApiResponse(
             ['campaign' => $campaign],
