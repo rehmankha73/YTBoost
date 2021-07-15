@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Campaign\CampaignCreateRequest;
 use App\Http\Requests\Campaign\CampaignUpdateRequest;
 use App\Models\Campaign;
+use App\Models\User;
 use App\Traits\HasApiResponse;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use SebastianBergmann\CodeCoverage\Driver\Selector;
 
 class CampaignController extends Controller
 {
@@ -17,9 +21,9 @@ class CampaignController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function index(): \Illuminate\Http\JsonResponse
+    public function index(): JsonResponse
     {
         $campaigns= Campaign::query()
             ->with('participants')
@@ -37,9 +41,9 @@ class CampaignController extends Controller
      * Store a newly created resource in storage.
      *
      * @param \App\Http\Requests\Campaign\CampaignCreateRequest $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function store(CampaignCreateRequest $request): \Illuminate\Http\JsonResponse
+    public function store(CampaignCreateRequest $request): JsonResponse
     {
         $validated_data = $request->validated();
         $campaign = Campaign::query()->create($validated_data);
@@ -55,9 +59,9 @@ class CampaignController extends Controller
      * Display the specified resource.
      *
      * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show(int $id): \Illuminate\Http\JsonResponse
+    public function show(int $id): JsonResponse
     {
         $campaign = Campaign::query()->findOrFail($id);
         $campaign['participants'] = $campaign->participants()->get();
@@ -70,14 +74,7 @@ class CampaignController extends Controller
     }
 
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param \App\Http\Requests\Campaign\CampaignUpdateRequest $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function update(CampaignUpdateRequest $request, int $id): \Illuminate\Http\JsonResponse
+    public function update(CampaignUpdateRequest $request, int $id): JsonResponse
     {
         $campaign = Campaign::query()->findOrFail($id);
         $updated_data = $request->validated();
@@ -88,19 +85,15 @@ class CampaignController extends Controller
         }
 
         return $this->successApiResponse(
-            ['campaign' => auth()->user()->campaigns()->findOrFail($id)],
+            ['campaign' => Campaign::query()
+                        ->with('participants')
+                        ->findOrFail($id)],
             200,
             'Campaign updated successfully.'
         );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroy(int $id): \Illuminate\Http\JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         $campaign = Campaign::query()->findOrFail($id);
         $campaign->delete();
@@ -111,25 +104,7 @@ class CampaignController extends Controller
         );
     }
 
-    public function fetchUserActionCampaign(Request $request) {
-        $user = auth()->user();
-
-        $campaigns = DB::table('campaigns')
-            ->join('participants', 'campaigns.id', '=', 'participants.user_id')
-            ->where('campaign_type', '=', 2)
-            ->where('participants.user_id', '=', auth()->id())
-            ->where('campaigns.user_id', '!=', auth()->id())
-            ->get();
-
-
-        return $this->successApiResponse(
-          $campaigns->toArray(),
-            200,
-            ' Campaign retrieved successfully.'
-        );
-    }
-
-    public function fetchCampaign( Request $request): \Illuminate\Http\JsonResponse
+    public function fetchCampaign( Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'campaign_type' => 'required|string',
@@ -144,11 +119,75 @@ class CampaignController extends Controller
                 'Validation Failed'
             );
         }
-        $campaigns = DB::table('campaigns')
+
+        $campaigns =Campaign::query()
+            ->select(['campaigns.*','participants.*'])
+            ->join('participants', 'campaigns.id','=','participants.campaign_id')
             ->where('campaign_type', '=', (int) $request->input('campaign_type'))
             ->where('is_state_busy', '=', false)
             ->where('campaigns.user_id', '!=', (int) $request->input('user_id'))
+            ->where('participants.user_id', '!=', (int) $request->input('user_id'))
+//            ->where('participants.user_id', '!=', 'campaigns.user_id')
             ->inRandomOrder()->limit((int)$request->input('no_of_random_record'))
+            ->with(['participants'])
+            ->get();
+
+
+        return $this->successApiResponse(
+            $campaigns->toArray(),
+            200,
+            ' Campaign retrieved successfully.'
+        );
+    }
+
+    public function fetchUserOwnCampaign(Request $request) {
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorApiResponse(
+                ['errors' => $validator->errors()],
+                422,
+                'Validations Failed'
+            );
+        }
+
+        $user = User::query()->findOrFail((int)$request->input('user_id'));
+
+        $campaigns = $user->campaigns()->with(['participants'])->get();
+
+
+        return $this->successApiResponse(
+            $campaigns->toArray(),
+            200,
+            ' Campaign retrieved successfully.'
+        );
+    }
+
+    public function fetchUserActionCampaign(Request $request) {
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'campaign_type' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorApiResponse(
+                ['errors' => $validator->errors()],
+                422,
+                'Validations Failed'
+            );
+        }
+
+        $user = User::query()->findOrFail((int)$request->input('user_id'));
+
+        $campaigns = Campaign::query()
+            ->join('participants', 'campaigns.id', '=', 'participants.campaign_id')
+            ->where('campaigns.campaign_type', '=', (int)$request->input('campaign_type'))
+            ->where('participants.user_id', '=', (int)$request->input('user_id'))
+            ->with(['participants'])
             ->get();
 
         return $this->successApiResponse(
@@ -157,4 +196,5 @@ class CampaignController extends Controller
             ' Campaign retrieved successfully.'
         );
     }
+
 }

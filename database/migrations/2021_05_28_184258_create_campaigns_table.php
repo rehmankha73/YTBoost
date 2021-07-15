@@ -17,9 +17,9 @@ class CreateCampaignsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->string('campaign_type');
-            $table->string('channel_url');
+            $table->string('channel_url')->nullable();
             $table->boolean('is_state_busy')->default(false);
-            $table->string('player_id');
+            $table->string('player_id')->nullable();
             $table->bigInteger('required_count');
             $table->bigInteger('required_time');
             $table->string('video_url');

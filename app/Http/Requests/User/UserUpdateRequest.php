@@ -24,11 +24,11 @@ class UserUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "name" => "required|string|min:3|max:255",
-            "email" => "required|email|min:3|max:255",
-            "password" => "required|string|min:8",
-            "image" => "nullable|image|mines:jpg,jpeg,png,gif",
-            "total_coins" => "required|min:1"
+            "image" => "nullable|string",
+            "total_coins" => "nullable|numeric",
+            "premium_type" => "nullable|string|min:3",
+            "has_premium" => "nullable|boolean",
+            "last_date" => "nullable|string",
         ];
     }
 }

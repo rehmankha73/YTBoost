@@ -31,13 +31,17 @@ use Illuminate\Support\Facades\Route;
 
 //apis
 
-Route::get('fetch-user-action-campaign', [CampaignController::class, 'fetchUserActionCampaign']);
-Route::post('fetch-campaign', [CampaignController::class, 'fetchCampaign']);
-Route::post('user', UserController::class);
+Route::post('fetch-campaign', [CampaignController::class, 'fetchCampaign']);//for showing campaigns on home page
+Route::post('fetch-user-own-campaign', [CampaignController::class, 'fetchUserOwnCampaign']);
+Route::post('fetch-user-action-campaign', [CampaignController::class, 'fetchUserActionCampaign']);
+
+//User Routes
+Route::post('user', UserController::class);//create/find using email
+Route::get('user/{id}', [UserController::class,'show'])->name('getUser');//getting specific user's data
+Route::put('user/{id}', [UserController::class,'update'])->name('updateUser');//updating user's info
+
 Route::apiResources([
     'campaigns' => CampaignController::class,
     'participants' => ParticipantController::class,
 ]);
-//Route::middleware('auth:sanctum')->group(function (){
-//
-//});
+
