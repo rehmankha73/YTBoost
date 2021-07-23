@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Campaign\CampaignCreateRequest;
 use App\Http\Requests\Campaign\CampaignUpdateRequest;
 use App\Models\Campaign;
+use App\Models\Participants;
 use App\Models\User;
 use App\Traits\HasApiResponse;
 use Illuminate\Database\Query\Builder;
@@ -120,24 +121,45 @@ class CampaignController extends Controller
             );
         }
 
-        $campaigns =Campaign::query()
-            ->select(['campaigns.*','participants.*'])
-            ->join('participants', 'campaigns.id','=','participants.campaign_id')
-            ->where('campaign_type', '=', (int) $request->input('campaign_type'))
-            ->where('is_state_busy', '=', false)
-            ->where('campaigns.user_id', '!=', (int) $request->input('user_id'))
-            ->where('participants.user_id', '!=', (int) $request->input('user_id'))
-//            ->where('participants.user_id', '!=', 'campaigns.user_id')
-            ->inRandomOrder()->limit((int)$request->input('no_of_random_record'))
-            ->with(['participants'])
-            ->get();
+        $participants = Participants::query()
+            ->where('user_id', '=', (int) $request->input('user_id'))
+            ->first();
+
+        if($participants) {
+            $campaigns =Campaign::query()
+                ->select(['campaigns.*','participants.*'])
+                ->join('participants', 'campaigns.id','=','participants.campaign_id')
+                ->where('campaign_type', '=', (int) $request->input('campaign_type'))
+                ->where('is_state_busy', '=', false)
+                ->where('campaigns.user_id', '!=', (int) $request->input('user_id'))
+                ->where('participants.user_id', '!=', (int) $request->input('user_id'))
+                ->inRandomOrder()->limit((int)$request->input('no_of_random_record'))
+                ->with(['participants'])
+                ->get();
+
+            return $this->successApiResponse(
+                $campaigns->toArray(),
+                200,
+                ' Campaign retrieved successfully.'
+            );
+
+        } else {
+            $campaigns =Campaign::query()
+                ->select(['campaigns.*'])
+                ->where('campaign_type', '=', (int) $request->input('campaign_type'))
+                ->where('is_state_busy', '=', false)
+                ->where('campaigns.user_id', '!=', (int) $request->input('user_id'))
+                ->inRandomOrder()->limit((int)$request->input('no_of_random_record'))
+                ->with(['participants'])
+                ->get();
 
 
-        return $this->successApiResponse(
-            $campaigns->toArray(),
-            200,
-            ' Campaign retrieved successfully.'
-        );
+            return $this->successApiResponse(
+                $campaigns->toArray(),
+                200,
+                ' Campaign retrieved successfully.'
+            );
+        }
     }
 
     public function fetchUserOwnCampaign(Request $request) {
